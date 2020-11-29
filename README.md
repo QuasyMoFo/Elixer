@@ -18,6 +18,7 @@ You may need to add something like *wait until AGX* on the scripts, or do your o
 
 ## Contact
 
-> Email: ElixerSpaceTechnologies@gmail.com
+> Email: ElixerSpaceTechnologies@gmail.com 
+
 > Discord: [here](https://discord.gg/ukGAYUF)
 
