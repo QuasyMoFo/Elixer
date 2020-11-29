@@ -16,6 +16,8 @@ We don't provide the boot files needed to run this, however it is advised that y
 and then AG8 for the ASDS, or RTLS landing script. We have provided the code for actually doing the launches and landings.
 You may need to add something like *wait until AGX* on the scripts, or do your own thing and run it from a boot file.
 
+You will need **lib_lazcalc.ks** for **orbit.ks**.
+
 ## Contact
 
 > Email: ElixerSpaceTechnologies@gmail.com 
