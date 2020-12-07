@@ -1,4 +1,4 @@
-// Elixer E2 Launch Script [version 1.3]
+// Elixer E2 Launch Script [version 1.6]
 
 // Elixer's public launch script, used on E2 for orbital launches with contracted payloads.
 // Mission parameters can be changed through the variables below, the script detects if it needs to use RTLS / ASDS.
@@ -10,60 +10,89 @@
 
 // Launch Variables
 
-SET TARGETAPOAPSIS TO 140. // Apoapsis (KM) 5000 
-SET TARGETPERIAPSIS TO 130. // Periapsis (KM) 4900
-SET TARGETINCLINATION TO 0. // Inclination (DEG) 6
+SET tApoaps TO 160. // Apoapsis (KM) ~ Freedom: 75
+SET tPeriaps TO 160. // Periapsis (KM) ~ Freedom: 75
+SET tInclination TO 10. // Inclination (DEG) ~ Freedom: 20
 
 // Script Mode
 
 SET dryRun to false. // Countdown (No Launch)
 SET staticFire to false. // Static Fire (No Liftoff)
 SET abortTest to false. // Aborts at T-2 (No Launch)
-SET isMaven to false.
+SET isMaven to false. // Maven Crew Capsule
 
 // Library Runs
 
-runOncePath("0:/lib_lazcalc").
+runOncePath("0:/lib_lazcalc.ks").
+runOncePath("0:/LIBRARY/libGNC.ks").
 
 // Ascent Variables
 
-set countdown to 10. // T- Countdown | 180-launchday
-set ftl to 2300. // 1800 - ASDS E2 | 2300 - RTLS E2
-set a to 120. // 100 - asds ~ 120 rtls
-set hasFairings to true. // Fairing Status
+set countdown to 10. // T- Countdown | 60-launchday
+set ftl to 1800. // 1800 - ASDS | 2400 - RTLS
+set a to 67.5. // 67.5 - ASDS | 120 - RTLS
+set hasFairings to false. // Fairing Status
 set fairingSepAlt to 55000. // Fairing Seperation Altitude (M)
-set deployedFairings to false. // Deployed Status
-set azimuthData to LAZcalc_init(TARGETPERIAPSIS * 1000, TARGETINCLINATION). // Azimuth Calculation
+set azimuthData to LAZcalc_init(tApoaps * 1000, tInclination). // Azimuth Calculation
 set steeringManager:rollts to 20. // Counteracting Engine Twists
 set steeringManager:maxstoppingtime to 1. // Steady Turns
-if isMaven {
-    set target to vessel("Station Freedom").
-    set window to true.
-    global hasWindow is window.
-    global windowOffset is 2.
-    global goForLaunch is false.
-    runOncePath("0:/LIBRARY/launchWindow.ks").
+if isMaven = true {
+    mavenStartup().
 }
-
 // Required Launch Functions
 
 function fuelLevel {
-
     return stage:resourcesLex["LiquidFuel"]:amount.
 
 }
 
 function pitchOfVector {
-
     parameter vecT.
 
     return 90 - vAng(ship:up:vector, vecT).
-
 }
 
+// function fairingSeperation {
+//     for item in ship:modulesnamed("ModuleDecouple") {
+//         IF item:part:name = "TE_19_F9_Fairing" {
+//             m:doevent("Decouple").
+//         }
+//     }
+// }
+
+// function engineSpool {
+//     parameter tgt, ullage is false.
+//     local startTime is time:seconds.
+//     local throttleStep is 0.000333.
+
+//     if (ullage) {
+//         rcs on.
+//         set ship:control:fore to 0.5.
+
+//         when (time:seconds > startTime + 2) then {
+//             set ship:control:neutralize to true.
+//             rcs off.
+//         }
+//     }
+
+//     if (throttle < tgt) {
+//         if (ullage) {
+//             lock throttle to 0.025. 
+//             wait 0.5.
+//         }
+//         until throttle >= tgt {
+//             lock throttle to throttle + throttleStep.
+//         } 
+//     } else {
+//         until throttle <= tgt {
+//             lock throttle to throttle - throttleStep.
+//         }
+//     }
+
+//     lock throttle to tgt.
+// }
+
 function azimuthPitchSteer {
-  
-    set a to 85.
     local slope is (0 - 90) / (1000 * (a - 10 - a * 0.05) - 0).
 
     local pitch is slope * ship:apoapsis + 90.
@@ -72,31 +101,46 @@ function azimuthPitchSteer {
         set pitch to 0.
     }
 
-    if hasFairings = true and deployedFairings = false {
+    if hasFairings = true and not isMaven {
         if ship:altitude > fairingSepAlt {
             stage.
-            set deployedFairings to true.
+            set hasFairings to false.
         }
     }
 
     set azimuth to LAZcalc(azimuthData).
 
     lock steering to heading(azimuth, pitch).
+}
 
+function GOVAP {
+    parameter _apoapsis. // in km
+    parameter _periapsis. // in km
+
+    local sm_axis is body:radius + (_apoapsis * 1000 + _periapsis * 1000) / 2.
+    local v is (body:mu * ((2/(_periapsis * 1000)) - (1/sm_axis)))^0.5.
+    return v.
+}
+
+function GOVAA {
+    parameter _apoapsis. // in km
+    parameter _periapsis. // in km
+
+    local sm_axis is body:radius + (_apoapsis * 1000 + _periapsis * 1000) / 2.
+    local v is (body:mu * ((2/(_apoapsis * 1000)) - (1/sm_axis)))^0.5.
+    return v.
 }
 
 function abort {
+    lock throttle to 0.
+    lock steering to up.
+    rcs off.
+    brakes off.
+    sas off.
+    lights on.
 
-        lock throttle to 0.
-        lock steering to up.
-        rcs off.
-        brakes off.
-        sas off.
-        lights on.
-
-        shutdown.
-
-    }
+    shutdown.
+}
 
 // Initialisation
 
@@ -125,6 +169,41 @@ if dryRun = false and staticFire = false and abortTest = false {
 function launchProgram { // Base For Launch
 
     preLaunch(). // Abort System & Countdown
+
+    when alt:radar > 5 then {
+        clearscreen.
+        print "| Elixer E2 Telemetry".
+        print "| ~~~~~~~~~~~~~~~~~~~~~".
+        print "| Ship: " + ship:name.
+        print "| Status: " + ship:status.
+        print "| ~~~~~~~Target~~~~~~~".
+        print "| Tgt Ap (Km): " + tApoaps.
+        print "| Tgt Pe (Km): " + tPeriaps.
+        print "| Tgt Inc (Deg): " + tInclination.
+        print "| Fairing Sep (M): " + fairingSepAlt.
+        print "| MECO Fuel (U): " + ftl.
+        print "| ~~~~~~~Orbital~~~~~~~".
+        print "| Alt (Km): " + round(altitude / 1000, 1).
+        print "| Ap (Km): " + round(apoapsis / 1000, 1).
+        print "| Pe (Km): " + round(periapsis / 1000, 1).
+        print "| Inc (Deg): " + round(orbit:inclination, 1).
+        print "| ~~~~~~~Vessel~~~~~~~".
+        print "| Airspeed (M/s): " + round(airspeed, 1).
+        print "| VSpeed (M/s): " + round(verticalSpeed, 1).
+        print "| Mass (T): " + round(ship:mass, 1).
+        print "| Q (Kpa): " + round(ship:dynamicpressure, 1).
+        print "| Thrust (Kn): " + round(ship:availablethrust, 1).
+        print "| Liquid Fuel (U): " + round(stage:LiquidFuel, 1).
+        print "| Oxidizer (U): " + round(stage:oxidizer, 1).
+        print "| ~~~~~~~Capsule/Payload~~~~~~~".
+        print "| Crew (Cap): " + ship:crewcapacity.
+        print "| Latitude: " + round(ship:latitude, 1).
+        print "| Longitude: "+ round(ship:longitude, 1).
+        print "|".
+
+        preserve.
+    }
+
     liftoff(). // Ignition
     ascent(). // PP & Meco
 
@@ -135,12 +214,10 @@ function preLaunch {
 
     // Launch Readiness Checks
 
-
-
     // Countdown
 
     if isMaven = false {
-        until countdown = 0 {
+        until countdown = 3 {
             print countdown.
             wait 1.
             clearscreen.
@@ -155,15 +232,14 @@ function preLaunch {
                 V0:play(note(700, 0.1)).
             }
 
-            if countdown < 3 {
-                print "Ignition".
-                break.
-            }
+            on ag9 {
+                print "Hold Hold Hold".
+                ag9 off.
+                ag6 off.
+                ag8 off.
+                reboot.
+            }           
         }
-    }
-
-    if isMaven {
-        wait until goForLaunch = true.
     }
 
 }
@@ -179,10 +255,9 @@ function liftoff {
 
 function ascent { // Pitch Program
 
-    set a to 85.
     local slope is (0 - 90) / (1000 * (a - 10 - a * 0.05) - 0).
 
-    until fuelLevel() <= ftl + 100 {
+    until fuelLevel() <= ftl + 25 {
         local pitch is slope * ship:apoapsis + 90.
 
         if pitch < 0 {
@@ -219,24 +294,58 @@ function ascent { // Pitch Program
 
 function secondstage { // Orbital Insertion Burn
 
-    until ship:apoapsis >= ((TARGETAPOAPSIS - 1) * 1000) {
+    until ship:apoapsis >= ((tApoaps - 2) * 1000) {
         azimuthPitchSteer().
     }
 
-    lock throttle to 0. // SECO1
-    lock steering to prograde.
+    lock throttle to 0.
+    lock steering to prograde + R(0, 0, 180).
 
-    wait until eta:apoapsis < 5.
-    lock throttle to 1. // SES2
-    wait until ship:Periapsis > TARGETPERIAPSIS.
-    lock throttle to 0. // SECO2.
-    wait 10.
-    stage.
+    oib().
 
-    if isMaven {
+    if isMaven = true {
         runoncepath("0:/E2/Maven.ks").
     }
 
+}
+
+function oib { 
+    local targetV is GOVAP(tApoaps, tPeriaps).
+        local currentV is GOVAA(ship:apoapsis / 1000, ship:periapsis / 1000).
+
+        local vgo is targetV - currentV.
+
+        local maxAcc is ship:maxthrust / ship:mass.
+        local burnTime is vgo / maxAcc.
+
+        lock steering to heading(LAZcalc(azimuthData), 0).
+        wait until eta:apoapsis - 1 <= (burnTime / 2).
+        lock throttle to 1.
+
+        wait until ship:periapsis >= tApoaps - 2 * 1000.
+        
+        lock throttle to 0.
+
+        lock steering to ship:prograde.
+
+        wait 5.
+}
+
+// Maven 
+
+function mavenStartup {
+
+    // Launch Window Stuff
+
+    waitForLaunch().
+    liftoff().
+    ascent().
+    secondstage().
+
+}
+
+function waitForLaunch {
+    print "Hey".
 }
 
 
@@ -269,6 +378,11 @@ function countdownDry {
 
         if countdown < 3 {
             print "Dry Run Complete".
+            shutdown.
+        }
+
+        if abort {
+            print "Hold Hold Hold".
             shutdown.
         }
     }
