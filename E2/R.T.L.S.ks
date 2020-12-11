@@ -1,14 +1,17 @@
-// Elixer Space Tech - RTLS Part 1 [version 1.3]
+// Elixer Space Tech - RTLS Part 1 [version 1.6]
+
+// Created by Edwin Robert ~ Oscar Fleet 
+// Using APACHE 2.0 License
 
 // Landing Co-ordinates
 
-set landingZone to latlng(-0.185422515944375, -74.4729431415369).
+set landingZone to latlng(11.9368650528175, -42.7576092270855).
 
 // Variables
 
-set boostbackGuidanceAngles to 8.
-set overshootDistance to 1800.
-set steeringManager:maxstoppingtime to 5.
+set boostbackGuidanceAngles to 5.
+set overshootDistance to 1500.
+set steeringManager:maxstoppingtime to 15.
 set lngOff to (landingZone:lng - addons:tr:impactpos:lng) * 10472.
 set latOff to (landingZone:lat - addons:tr:impactpos:lat) * 10472.
 set runmode to 0.
@@ -39,7 +42,7 @@ rcs on.
 toggle ag1.
 lock steering to heading(landingZone:heading + 1, 0).
 
-wait 14.
+wait 12.
 
 lock throttle to 1.
 rcs off.
@@ -54,13 +57,13 @@ when lngOff > overshootDistance then {
 
 when throttle > 0 then {
     when latOff < -20 then {
-        lock steering to heading(landingZone:heading - boostbackGuidanceAngles, 0).
+        lock steering to heading(landingZone:heading - boostbackGuidanceAngles, 1).
         preserve.
     }
 }
 
 when latOff > 20 then {
-    lock steering to heading(landingZone:heading + boostbackGuidanceAngles, 0).
+    lock steering to heading(landingZone:heading + boostbackGuidanceAngles, 1).
     preserve.
 }
 

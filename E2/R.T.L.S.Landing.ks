@@ -1,14 +1,18 @@
-// Elixer Space Tech - RTLS Part 2 [version 1.3]
+// Elixer Space Tech - RTLS Part 2 [version 1.6]
+
+// Created by Edwin Robert ~ Oscar Fleet 
+// Using APACHE 2.0 License
 
 // Landing Co-ordinates
 
-set landingZone to latlng(-0.185422515944375, -74.4729431415369).
+set landingZone to latlng(11.9368650528175, -42.7576092270855).
 
 // Variables
 
-set entryBurnAlt to 25000.
+set entryBurnAlt to 30000.
 set entryBurnShutdown to -300.
-set boosterHeight to 30.05. 
+set boosterHeight to 29.95.
+set firstFlight to true. 
 set aoa to 20.
 set errorScaling to 1.
 set steeringManager:maxstoppingtime to 7.5.
@@ -16,11 +20,9 @@ set steeringManager:maxstoppingtime to 7.5.
 // AOA
 
 set entryBurnAOA to -5. // Re-entry burn AOA
-set postEntryBurnAOA to 25. // Post Re-entry - 10 km
-set tenKilometerAOA to 15. // 10 Kilometers
-set fiveKilometerAOA to 10. // 5 Kilometers
-set landingBurnAOA to -2. // Landing Burn Start
-set landingBurnPart2AOA to -1. // Below 500 meters (powered guidance)
+set postEntryBurnAOA to 15. // Post Re-entry - 10 km
+set tenKilometerAOA to 12.5. // 10 Kilometers
+set fiveKilometerAOA to 7.5. // 5 Kilometers
 
 // Functions
 
@@ -70,7 +72,9 @@ wait until ship:altitude < entryBurnAlt.
     lock throttle to 1.
     set aoa to entryBurnAOA.
     lock steering to boosterGuidance().
-    //toggle ag7.
+    if firstFlight = true {
+        toggle ag7.
+    }
     rcs off.
 
 wait until ship:verticalspeed > entryBurnShutdown.
@@ -83,11 +87,11 @@ wait until ship:verticalspeed > entryBurnShutdown.
 
 // Descending AOA 
 
-when alt:radar < 10000 then {
+if alt:radar = 10000 {
     set aoa to tenKilometerAOA.
 }
 
-when alt:radar < 5000 then {
+if alt:radar = 5000 {
     set aoa to fiveKilometerAOA.
 }
 
@@ -108,17 +112,19 @@ function landingBurn {
     until verticalSpeed > -0.01 {
         lock steering to boosterGuidance().
 
+        steeringManager:resettodefault().
+
         if throttle > 0 {
-            set aoa to landingBurnAOA.
+            set aoa to -2.
         }
 
-        if alt:radar < 250 {
-            set aoa to landingBurnPart2AOA.
+        if alt:radar < 250 and throttle > 0 {
+            set aoa to -1.
         }
 
         if alt:radar < 125 {
             gear on.
-            lock steering to srfRetrograde  .
+            set aoa to -0.25.
         }
 
         if missionTime - t > 0.1 {
@@ -165,3 +171,4 @@ function landingBurn {
         wait 10.
         shutdown.
 }
+
