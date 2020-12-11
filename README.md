@@ -5,10 +5,10 @@ To use this code, and modify it to your own craft, you will need **some** kOS ex
 
 You will never be using the current, up to date version of the code. DO YOUR OWN MODIFICATIONS
 
-## Updates (version 1.3.0)
+## Updates (version 2.0.0)
 
-* RTLS & ASDS Landings (outdated)
-* Orbital Launch Script (outdated)
+* Maven Launch & Docking Script.
+* EHeavy Launch Script (Landings Soon)
 
 ## Usage (boot files)
 
@@ -17,6 +17,7 @@ and then AG8 for the ASDS, or RTLS landing script. We have provided the code for
 You may need to add something like *wait until AGX* on the scripts, or do your own thing and run it from a boot file.
 
 You will need **lib_lazcalc.ks** for **orbit.ks**.
+For Maven flights, you will also need the **launchWindow.ks & libGNC.ks** scripts.
 
 ## Contact
 
