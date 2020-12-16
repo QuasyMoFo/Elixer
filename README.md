@@ -3,7 +3,7 @@
 Below are some of Elixers Public Launch Scripts, used on the E2 launch system. 
 To use this code, and modify it to your own craft, you will need **some** kOS experience.
 
-You will never be using the current, up to date version of the code. DO YOUR OWN MODIFICATIONS
+You will never be using the current, up to date version of the code. DO YOUR OWN MODIFICATIONS!
 
 ## Updates (version 2.0.0)
 
