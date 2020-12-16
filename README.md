@@ -12,8 +12,6 @@ You will never be using the current, up to date version of the code. DO YOUR OWN
 * Maven Launch & Docking Script.
 * EHeavy Launch Script (Landings Soon)
 
-***
-
 ## Upcoming (version 2.1.0)
 
 * Improved Maven launch & docking script.
