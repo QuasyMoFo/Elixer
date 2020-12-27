@@ -23,7 +23,7 @@
 <|---VISUAL MODS---|>
 
 # [Astronomers Visual Pack](https://forum.kerbalspaceprogram.com/index.php?/topic/160878-ksp-110-astronomers-visual-pack-beyond-v405-july-19th-2020/)
-# [Environmental Visual Enhancements](https://forum.kerbalspaceprogram.com/index.php?/topic/149733-18-environmentalvisualenhancements-180-2/)
+# <font size="1"!>[Environmental Visual Enhancements](https://forum.kerbalspaceprogram.com/index.php?/topic/149733-18-environmentalvisualenhancements-180-2/)
 #
 
 <|---PART MODS---|>
